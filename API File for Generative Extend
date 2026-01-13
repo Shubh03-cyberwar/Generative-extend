@@ -1,0 +1,180 @@
+🎬 Generative Extend API
+API Specification for AI-Based Video Frame Extension
+
+📌 Purpose
+
+The Generative Extend API allows clients to extend the duration of a video clip by generating new frames using generative AI models.
+
+Use cases:
+
+Smooth transitions
+
+Fix early clip endings
+
+Avoid reshoots
+
+Meet exact video duration requirements
+
+# High level architecture
+Client (Editor / App)
+   ↓
+REST API (FastAPI / Node)
+   ↓
+Video Processor (FFmpeg)
+   ↓
+AI Model (Generative Video Model)
+   ↓
+Storage (S3 / Local)
+
+🔑 API Features
+
+Upload video clip
+
+Specify extension duration
+
+Choose quality & frame count
+
+Track processing status
+
+Download extended video
+
+🌐 Base URL
+https://api.generative-extend.ai/v1
+
+🔐 Authentication
+Authorization: Bearer <API_KEY>
+
+📥 1. Create Generative Extend Job
+Endpoint
+POST /extend
+Request (multipart/form-data)
+| Field          | Type   | Required | Description                             |
+| -------------- | ------ | -------- | --------------------------------------- |
+| video          | file   | Yes      | Input video file                        |
+| extend_seconds | number | Yes      | Duration to extend (1–5 recommended)    |
+| fps            | number | No       | Output frame rate (default: source fps) |
+| resolution     | string | No       | same / 1080p / 4k                       |
+| quality        | string | No       | low / medium / high                     |
+
+Example URL
+curl -X POST https://api.generative-extend.ai/v1/extend \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "video=@clip.mp4" \
+  -F "extend_seconds=2" \
+  -F "quality=high"
+Response
+{
+  "job_id": "gx_91f23ab",
+  "status": "queued",
+  "estimated_time_sec": 45
+}
+
+📊 2. Check Job Status
+Endpoint
+GET /extend/{job_id}/status
+Response
+{
+  "job_id": "gx_91f23ab",
+  "status": "processing",
+  "progress": 68
+}
+
+Status Values
+
+queued
+
+processing
+
+completed
+
+failed
+
+📤 3. Download Extended Video
+Endpoint
+GET /extend/{job_id}/download
+Response
+
+200 OK → video/mp4
+
+404 → job not ready
+
+410 → expired file
+
+⚙️ Backend Pseudo-Code (FastAPI)
+from fastapi import FastAPI, UploadFile
+import uuid
+
+app = FastAPI()
+
+@app.post("/extend")
+async def generative_extend(video: UploadFile, extend_seconds: int):
+    job_id = f"gx_{uuid.uuid4().hex[:8]}"
+
+    # 1. Save video
+    # 2. Extract last N frames
+    # 3. Run generative video model
+    # 4. Append generated frames
+    # 5. Encode final video
+
+    return {
+        "job_id": job_id,
+        "status": "queued"
+    }
+
+🧠 Core AI Logic (Conceptual)
+1. Extract last 0.5–1 sec of frames
+2. Analyze:
+   - Motion vectors
+   - Depth
+   - Lighting
+3. Generate new frames using diffusion / transformer model
+4. Validate frame continuity
+5. Append frames to original clip
+6. Re-encode video
+
+📏 Constraints & Guardrails
+
+Max extension: 5 seconds
+
+Recommended: 1–3 seconds
+
+Disable for dialogue-heavy segments
+
+Reject clips with excessive camera shake
+
+Log all generated frames for audit
+
+⚠️ Error Responses
+{
+  "error": "EXTENSION_TOO_LONG",
+  "message": "Maximum extend duration is 5 seconds"
+}
+
+{
+  "error": "UNSUPPORTED_CONTENT",
+  "message": "Fast motion scenes are not supported"
+}
+
+📈 Performance Expectations
+| Mode        | Time       |
+| ----------- | ---------- |
+| Low quality | ~20 sec    |
+| Medium      | ~40 sec    |
+| High        | ~60–90 sec |
+
+
+🔒 Ethical & Legal Notes
+
+Generated frames must be tagged as AI-created (metadata)
+
+No face reconstruction for identity manipulation
+
+Respect content ownership
+
+📌 One-Line API Summary
+
+The Generative Extend API creates realistic new video frames to extend clips naturally without reshooting.
+
+📄 License
+
+MIT License
