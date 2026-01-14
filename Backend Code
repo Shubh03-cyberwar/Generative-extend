@@ -1,0 +1,108 @@
+📁 Repo Structure (Recommended)
+
+AI-in-Film-Editing/
+│── notebooks/
+│   └── generative_extend_demo.ipynb
+│── input/
+│   └── sample.mp4
+│── output/
+│   └── extended.mp4
+│── README.md
+
+🧩 Cell 1 — Install Dependencies
+!pip install moviepy opencv-python numpy tqdm
+
+🧩 Cell 2 — Imports
+import cv2
+import numpy as np
+from moviepy.editor import VideoFileClip, ImageSequenceClip
+from tqdm import tqdm
+import os
+
+🧩 Cell 3 — Load Video
+INPUT_VIDEO = "../input/sample.mp4"
+OUTPUT_VIDEO = "../output/extended.mp4"
+EXTEND_SECONDS = 2  # Recommended: 1–3 seconds
+
+clip = VideoFileClip(INPUT_VIDEO)
+fps = clip.fps
+print("FPS:", fps)
+print("Original Duration:", clip.duration)
+
+🧩 Cell 4 — Extract Last Frames
+def extract_last_frames(video_path, seconds, fps):
+    cap = cv2.VideoCapture(video_path)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    frames_needed = int(seconds * fps)
+
+    start_frame = max(0, total_frames - frames_needed)
+
+    frames = []
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
+    for _ in range(frames_needed):
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frames.append(frame)
+
+    cap.release()
+    return frames
+
+last_frames = extract_last_frames(INPUT_VIDEO, 1, fps)
+print("Extracted frames:", len(last_frames))
+
+🧩 Cell 5 — Generative Extend (AI Simulation)
+⚠️ Note: This simulates AI behavior.
+Real generative models (diffusion/transformers) can be plugged here later.
+
+def generative_extend(frames, extend_seconds, fps):
+    extended_frames = []
+    total_new_frames = int(extend_seconds * fps)
+
+    last_frame = frames[-1]
+
+    for i in tqdm(range(total_new_frames)):
+        alpha = i / total_new_frames
+
+        # Simulated motion blur + brightness decay
+        blur = cv2.GaussianBlur(last_frame, (15, 15), 0)
+        new_frame = cv2.addWeighted(last_frame, 1 - alpha, blur, alpha, 0)
+
+        extended_frames.append(new_frame)
+
+    return extended_frames
+
+generated_frames = generative_extend(last_frames, EXTEND_SECONDS, fps)
+print("Generated frames:", len(generated_frames))
+
+🧩 Cell 6 — Combine Original + Generated Frames
+def combine_video(original_path, new_frames, fps, output_path):
+    cap = cv2.VideoCapture(original_path)
+    frames = []
+
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    cap.release()
+
+    for frame in new_frames:
+        frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+
+    final_clip = ImageSequenceClip(frames, fps=fps)
+    final_clip.write_videofile(output_path, codec="libx264")
+
+combine_video(INPUT_VIDEO, generated_frames, fps, OUTPUT_VIDEO)
+
+🧩 Cell 7 — Result Summary
+final_clip = VideoFileClip(OUTPUT_VIDEO)
+print("New Duration:", final_clip.duration)
+print("Video saved at:", OUTPUT_VIDEO)
+
+📌 GitHub README Snippet
+This notebook demonstrates a simplified, Jupyter-friendly implementation
+of Generative Extend using OpenCV and MoviePy. It simulates how AI can
+extend video clips by generating visually consistent frames.
